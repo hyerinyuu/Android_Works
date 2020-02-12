@@ -3,6 +3,7 @@ package com.biz.memo;
 import android.os.Bundle;
 
 import com.biz.memo.adapter.MemoViewAdapter;
+import com.biz.memo.adapter.MemoViewModel;
 import com.biz.memo.domain.MemoVO;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -10,6 +11,8 @@ import com.google.android.material.textfield.TextInputEditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -33,6 +36,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     RecyclerView memo_list_view = null;
     RecyclerView.Adapter view_adapter = null;
 
+    // DB연동을 위한 변수 선언
+    MemoViewModel memoViewModel;
+
+    ViewModelProvider.Factory viewModelFactory;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,18 +56,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         m_input_memo = findViewById(R.id.m_input_text);
 
-        /*
-        for(int i = 0 ; i < 30 ; i++){
-            MemoVO memoVO = new MemoVO();
-            memoVO.setM_date(sd.format(date));
-            memoVO.setM_time(st.format(date));
-            memoVO.setM_text((i+1) + "번째 메모");
-
-            memoList.add(memoVO);
-        }
-        */
-
         memo_list_view = findViewById(R.id.memo_list_view);
+
+        // DB 연동을 위한 준비
+        /*
+        memoViewModel = new ViewModelProvider(this).get(MemoViewModel.class);
+        => 2.2.0에서는 위와 같은 코드가 가능하나
+
+        2.2.2로 버전업이 되면서 아래와 같이 코드를 작성해야 오류가 나지 않음
+        (this가 onClick method와 충돌해서 아래와 같은 코드로 수정함)
+         */
+        memoViewModel = new ViewModelProvider(getViewModelStore(), viewModelFactory).get(MemoViewModel.class);
+        memoList = memoViewModel.selectAll();
+
+
         view_adapter = new MemoViewAdapter(MainActivity.this, memoList);
 
         memo_list_view.setAdapter(view_adapter);
