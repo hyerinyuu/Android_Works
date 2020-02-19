@@ -11,6 +11,7 @@ import com.google.android.material.textfield.TextInputEditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -34,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     List<MemoVO> memoList = null;
     TextInputEditText m_input_memo = null;
     RecyclerView memo_list_view = null;
-    RecyclerView.Adapter view_adapter = null;
+    MemoViewAdapter view_adapter = null;
 
     // DB연동을 위한 변수 선언
     MemoViewModel memoViewModel;
@@ -59,19 +60,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         memo_list_view = findViewById(R.id.memo_list_view);
 
         // DB 연동을 위한 준비
-        /*
+
+        // LifeCycle 2.2.0-beta01의 ViewModelProvider사용
         memoViewModel = new ViewModelProvider(this).get(MemoViewModel.class);
+
+        /*
+            DB의 데이터가 변경되어 이전에 selectAll() 가져온 리스트에 변동이 발생하면
+            observ() method가 알람을 주고 onChanged 이벤트가 발생을 한다.
+
+            onChanged() method에서 데이터를 화면에 보여주는 코드를 작성한다.
+         */
+        memoViewModel.selectAll().observe(this, new Observer<List<MemoVO>>() {
+            @Override
+            public void onChanged(List<MemoVO> memoVOS) {
+                view_adapter.setMemoList(memoList);
+
+            }
+        });
+        /*
         => 2.2.0에서는 위와 같은 코드가 가능하나
 
         2.2.2로 버전업이 되면서 아래와 같이 코드를 작성해야 오류가 나지 않음
         (this가 onClick method와 충돌해서 아래와 같은 코드로 수정함)
          */
-        memoViewModel = new ViewModelProvider(getViewModelStore(), viewModelFactory).get(MemoViewModel.class);
-        memoList = memoViewModel.selectAll();
-
-
+        // memoList = memoViewModel.selectAll();
         view_adapter = new MemoViewAdapter(MainActivity.this, memoList);
-
         memo_list_view.setAdapter(view_adapter);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
@@ -139,11 +152,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .m_time(st.format(date))
                 .m_text(m_memo_text).build();
 
-        memoList.add(memoVO);
+        // memoViewModel의 insert method를 호출하여 DB에 memoVO 데이터를 저장
+        memoViewModel.insert(memoVO);
+
+
+        // memoList.add(memoVO);
 
         // RecyclerView의 adapoer에게 데이터가 변경되었으니 list를 다시 그려달라고
         // 통보하는 것.(이걸 안해주면 데이터를 추가해도 list가 보이지 않음)
-        view_adapter.notifyDataSetChanged();
+        // view_adapter.notifyDataSetChanged();
 
 
         m_input_memo.setText("");
