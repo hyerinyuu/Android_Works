@@ -26,8 +26,26 @@ public class MemoRepository {
       return mDao.selectAll();
     }
 
-    public void insert(MemoVO memoVO){
-        mDao.save(memoVO);
+    // thread pool을 이용해서 thread를 실행
+    // #### thread로 insert 실행
+    public void insert(final MemoVO memoVO){
+
+        // 기본 자바 코드
+        /*
+        MemoDataBase.dbWriterThread.execute(new Runnable() {
+            @Override
+            public void run() {
+                mDao.save(memoVO);
+            }
+        });
+         */
+        //   [Rambda식]
+        // () : 위의 run method
+        MemoDataBase.dbWriterThread.execute( () -> mDao.save(memoVO) );
+
+    }
+    public void delete(MemoVO memoVO){
+        MemoDataBase.dbWriterThread.execute( () -> mDao.delete(memoVO) );
     }
 
 }

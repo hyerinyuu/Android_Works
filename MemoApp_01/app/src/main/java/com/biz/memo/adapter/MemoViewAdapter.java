@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -16,18 +17,44 @@ import java.util.List;
 
 public class MemoViewAdapter extends RecyclerView.Adapter{
 
-    private Context context = null;
-    private List<MemoVO> memoList = null;
+    // 삭제버튼에 사용할 이벤트 interface를 하나 생성하고
+    // 내용이 없는 이벤트 method도 선언
+    public interface OnDeleteButtonClickListner{
+        void onDeleteButtonClicked(MemoVO memoVO);
+    }
+    // 삭제버튼 이벤트를 저장할 객체 변수를 선언하고
+    private OnDeleteButtonClickListner deleteBtnClick;
 
-    // MainActivity에서 MemoViewAdapter를 만들 때 Context와 MemoList를 주입할 생성자
-    public MemoViewAdapter(Context context, List<MemoVO> memoList) {
-        this.context = context;
-        this.memoList = memoList;
+    // 삭제버튼 이벤트의 본체를 외부로부터 주입(전달) 받을 수 있는 setter를 선언
+    public void setDeleteBtnClick(OnDeleteButtonClickListner event) {
+        this.deleteBtnClick = event;
     }
 
+
+    private Context context = null;
+    private List<MemoVO> memoList = null;
+    private LayoutInflater layoutInflater;
+
+
+    // context 생성자
     public MemoViewAdapter(Context context) {
         this.context = context;
-        this.memoList = memoList;
+        layoutInflater = LayoutInflater.from(context);
+    }
+
+    // context, list 생성자
+    // MainActivity에서 MemoViewAdapter를 만들 때 Context와 MemoList를 주입할 생성자
+    public MemoViewAdapter(Context context, List<MemoVO> memoList) {
+
+        // 만약 context, list 생성자로 ViewAdapter를 생성하면
+        // memoList만 여기에서 로컬객체에 등록을 하고
+        // context 변수 값은 context 생성자로 토스하여
+        // 그곳에서 layoutInflater를 초기화 하도록 코드를 단일화 한다.
+
+        // 클래스 자신이 가지고 있는 또 다른 생성자를 호출하는 코드
+        // 이 코드는 생성자 메서드에서 가장 먼저 등장해야 한다.(아니면 오류)
+        this(context);
+        layoutInflater = LayoutInflater.from(context);
     }
 
     public void setMemoList(List<MemoVO> memoList){
@@ -45,13 +72,11 @@ public class MemoViewAdapter extends RecyclerView.Adapter{
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
         // context == mainActivity
+        // memo_item.xml파일을 가져와서 view 객체로 생성(확장)하기
         // memoItem을 view로 가져와서 쓸 준비
-        View view = LayoutInflater.from(context)
-                /*
-                   memo_item.xml파일을 가져와서 view 객체로 생성(확장)하기
-                 */
-                .inflate(R.layout.memo_item, parent, false);
-
+        // View view = LayoutInflater.from(context)
+        // .inflate(R.layout.memo_item, parent, false);
+        View view = layoutInflater.inflate(R.layout.memo_item, parent, false);
         MemoHolder holder = new MemoHolder(view);
         return holder;
     }
@@ -61,15 +86,17 @@ public class MemoViewAdapter extends RecyclerView.Adapter{
      */
     class MemoHolder extends RecyclerView.ViewHolder{
 
-        public TextView m_time;
-        public TextView m_date;
-        public TextView m_text;
+        public TextView item_view_time;
+        public TextView item_view_date;
+        public TextView item_view_text;
+        public Button item_btn_delete;
 
         public MemoHolder(@NonNull View itemView) {
             super(itemView);
-            m_time = itemView.findViewById(R.id.m_time);
-            m_date = itemView.findViewById(R.id.m_date);
-            m_text = itemView.findViewById(R.id.m_text);
+            item_view_time = itemView.findViewById(R.id.item_time);
+            item_view_date = itemView.findViewById(R.id.item_date);
+            item_view_text = itemView.findViewById(R.id.item_text);
+            item_btn_delete = itemView.findViewById(R.id.item_delete);
 
         }
     }
@@ -90,10 +117,34 @@ public class MemoViewAdapter extends RecyclerView.Adapter{
         TextView의 setText() method를 이용해서 문자열을 채워 넣어준다.
          */
         MemoHolder memoHolder = (MemoHolder)holder;
-        memoHolder.m_date.setText(memoList.get(position).getM_date());
-        memoHolder.m_time.setText(memoList.get(position).getM_time());
-        memoHolder.m_text.setText(memoList.get(position).getM_text());
+        memoHolder.item_view_date.setText(memoList.get(position).getM_date());
+        memoHolder.item_view_time.setText(memoList.get(position).getM_time());
+        memoHolder.item_view_text.setText(memoList.get(position).getM_text());
 
+        /*
+        전통 자바 코드
+        memoHolder.item_btn_delete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+         */
+        // 람다식 코드
+        // db삭제는 아니고 화면에 보이는 list만 삭제하는 것.
+        // 실제 DB에 데이터 삭제를 수행해야 정상적인 처리가 되는데
+        // ViewAdapter에서 memoViewModel을 가져와서 연결한 후 DB를 처리해야한다.
+        // 그렇게 하기에는 여러가지 퍼포먼스에서 문제가 발생할 수 있다.
+        // 이벤트를 MainActivity로 옮겨서 거기에서 설정을 한 후 가져와서 처리를 해줘야한다.
+        /*
+        memoHolder.item_btn_delete.setOnClickListener(
+            (view) -> {
+                memoList.remove(position);
+                notifyDataSetChanged();
+            });
+         */
+        memoHolder.item_btn_delete.setOnClickListener(v -> deleteBtnClick.onDeleteButtonClicked(memoList.get(position)));
+        // notifyDataSetChanged();
     }
 
     @Override

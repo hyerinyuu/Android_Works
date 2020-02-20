@@ -38,4 +38,8 @@ public class MemoViewModel extends AndroidViewModel {
         memoRepository.insert(memoVO);
     }
 
+    public void delete(MemoVO memoVO){
+        memoRepository.delete(memoVO);
+    }
+
 }

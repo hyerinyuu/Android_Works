@@ -23,13 +23,16 @@ public interface MemoDao {
         DB의 내용이 변경되면 변경된 부분만 가져와서
         view에 표시할 수 있도록 알람을 내부적으로 발생시키는 클래스
      */
-    @Query("SELECT * FROM tbl_memo")
+    // projection : db에서 select문을 사용할 때 * 을 사용하지 않고
+    // 칼럼들을 모두 명시하여 나열해 주는 것.
+    // ********** Fts4을 사용하려면 select문에 반드시 rowid 칼럼을 표시해주어야한다.
+    @Query("SELECT rowid, * FROM tbl_memo")
     public LiveData<List<MemoVO>> selectAll();
 
-    @Query("SELECT * FROM tbl_memo WHERE rowid = :rowid")
-    public MemoVO findByRowId(long rowid);
+    @Query("SELECT rowid, * FROM tbl_memo WHERE rowid = :rowid")
+    public MemoVO findByRowId(int rowid);
 
-    @Query("SELECT * FROM tbl_memo WHERE m_text LIKE :m_text")
+    @Query("SELECT rowid, * FROM tbl_memo WHERE m_text LIKE :m_text")
     public LiveData<List<MemoVO>> findByText(String m_text);
 
     /*
@@ -39,11 +42,22 @@ public interface MemoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     public void save(MemoVO memoVO);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    public void insert(MemoVO memoVO);
+
+
+    @Update
+    void update(MemoVO memoVO);
+
     /*
         표준 room @Delete method는
         VO를 매개변수로 받아서 delete를 수행
      */
     @Delete
     public void delete(MemoVO memoVO);
+
+    @Query("DELETE FROM tbl_memo WHERE rowid = :rowid")
+    public void delete(int rowid);
+
 
 }

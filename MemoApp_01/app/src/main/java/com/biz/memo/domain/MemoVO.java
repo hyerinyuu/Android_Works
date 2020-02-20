@@ -28,6 +28,7 @@ import lombok.ToString;
 
     FTS4는 Room 2.1.0 이상에서 제공되는 기능이다.
  */
+@Fts4
 @Entity(tableName = "tbl_memo")
 public class MemoVO {
 

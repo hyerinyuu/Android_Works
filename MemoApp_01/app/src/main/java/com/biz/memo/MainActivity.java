@@ -32,7 +32,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    List<MemoVO> memoList = null;
+    // List<MemoVO> memoList = null;
     TextInputEditText m_input_memo = null;
     RecyclerView memo_list_view = null;
     MemoViewAdapter view_adapter = null;
@@ -49,18 +49,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        memoList = new ArrayList<MemoVO>();
+       //  memoList = new ArrayList<MemoVO>();
 
         Button btn_save = findViewById(R.id.memo_save);
         btn_save.setOnClickListener(this);
 
+        // memoList = new ArrayList<>();
 
         m_input_memo = findViewById(R.id.m_input_text);
-
         memo_list_view = findViewById(R.id.memo_list_view);
 
-        // DB 연동을 위한 준비
+        // RecyclerView에 데이터를 표시하기 위해서
+        // Adapter를 부착하는 부분
+        view_adapter = new MemoViewAdapter(this);
+        memo_list_view.setAdapter(view_adapter);
 
+        // DB 연동을 위한 준비
         // LifeCycle 2.2.0-beta01의 ViewModelProvider사용
         memoViewModel = new ViewModelProvider(this).get(MemoViewModel.class);
 
@@ -70,13 +74,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             onChanged() method에서 데이터를 화면에 보여주는 코드를 작성한다.
          */
+        // 전통 자바 코드
+        /*
         memoViewModel.selectAll().observe(this, new Observer<List<MemoVO>>() {
             @Override
             public void onChanged(List<MemoVO> memoVOS) {
-                view_adapter.setMemoList(memoList);
+                view_adapter.setMemoList(memoVOS);
 
             }
         });
+        */
+        // 자바 1.8이상의 람다식 코드
+        memoViewModel.selectAll().observe(this,(memoList) -> view_adapter.setMemoList(memoList));
         /*
         => 2.2.0에서는 위와 같은 코드가 가능하나
 
@@ -84,8 +93,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         (this가 onClick method와 충돌해서 아래와 같은 코드로 수정함)
          */
         // memoList = memoViewModel.selectAll();
-        view_adapter = new MemoViewAdapter(MainActivity.this, memoList);
-        memo_list_view.setAdapter(view_adapter);
+
+
+        MemoViewAdapter.OnDeleteButtonClickListner deleteBtnEvent =
+                new MemoViewAdapter.OnDeleteButtonClickListner() {
+                    @Override
+                    public void onDeleteButtonClicked(MemoVO memoVO) {
+                        memoViewModel.delete(memoVO);
+                    }
+                };
+        view_adapter.setDeleteBtnClick(deleteBtnEvent);
+
+
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
         memo_list_view.setLayoutManager(layoutManager);
@@ -154,15 +173,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // memoViewModel의 insert method를 호출하여 DB에 memoVO 데이터를 저장
         memoViewModel.insert(memoVO);
-
-
-        // memoList.add(memoVO);
-
         // RecyclerView의 adapoer에게 데이터가 변경되었으니 list를 다시 그려달라고
         // 통보하는 것.(이걸 안해주면 데이터를 추가해도 list가 보이지 않음)
         // view_adapter.notifyDataSetChanged();
-
-
         m_input_memo.setText("");
 
     }
