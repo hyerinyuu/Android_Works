@@ -12,8 +12,16 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
+        // App을 phone에 빌드(Deploy)하는 정책에
+        // proguard 정책을 적용할 수 있다.
+        // App 빌드하는 파일을 압축할것이냐 말것이냐 라는 정책
+        // minifyEnaled와 shrinkResources 속성값을 true로 설정함으로써
+        // App에 빌드되는 파일 크기를 최소한으로 줄이는 압축을 수행하고
+        // *.class 파일들을 난독화 하여 혹시 리버스 엔지니어링으로
+        // 소스코드를 복원하는 것을 줄일수 있도록 한다.
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

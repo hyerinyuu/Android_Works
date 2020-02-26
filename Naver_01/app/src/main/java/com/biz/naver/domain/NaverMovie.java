@@ -22,12 +22,15 @@ public class NaverMovie {
     private String lastBuildDate; // 검색 결과를 생성한 시간이다.
 
     @SerializedName("total")
+    @Expose
     private String total;  // 검색의 시작 위치를 지정할 수 있다. 최대 1000까지 가능하다.
 
     @SerializedName("start")
+    @Expose
     private String start;
 
     @SerializedName("display")
+    @Expose
     private String display;  // 검색 결과 출력 건수를 지정한다. 최대 100까지 가능하다.
 
     // 실제로 데이터를 담을 list형 변수
